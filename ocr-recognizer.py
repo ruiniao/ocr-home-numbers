@@ -14,17 +14,17 @@
 
 # # Project description: Build a simple OCR system <a class="anchor" id="first-bullet"></a>
 # 
-# In the linked `ocr.tar.gz` file there are a number of jpg files that are named as
+# In the `ocr.tar.gz` file there are a number of jpg files that are named as
 # 
 #     {counter}_{text}.jpg
 # 
 # where `counter` is just an arbitrary number and `text` represents the characters inside
-# the image, sorted left to right. What I would like you to do is:
+# the image, sorted left to right. The to-do list of this project is:
 # 
 # 1.  Build a simple OCR model for this data and train it
 # 2.  Write a class that loads up a trained model and has a `predict` function which should accept an image as an input and return the OCR result as a string
-# 3.  Show your loss curves as well as some accuracy tests with examples
-# 4.  Write a small informal report which contains this information along with a description of the model and recommendations for improvements
+# 3.  Show the loss curves as well as some accuracy tests with examples
+# 4.  Discuss the recommendations for improvements
 
 # # Solution pipeline <a class="anchor" id="second-bullet"></a>
 # Since the dataset contains focused images with the digit sequence as the main object, here we will not do text region detection. We will use the image data as the input of a multi-output classifier to classify the digits in the image. Note that the maximum length of digits in the image is 5. The base model is a CNN model with 5 convolutional layers and 5 dense output layers.
@@ -39,7 +39,7 @@ drive.mount('/content/drive', force_remount=True)
 
 # !ls "/content/drive/My Drive/Colab Notebooks"
 import sys
-sys.path.append('/content/drive/My Drive/Colab Notebooks/SimbeRobotics-data/')
+sys.path.append('/content/drive/My Drive/Colab Notebooks/ocr/')
 
 
 # # 1. Explore the dataset <a class="anchor" id="second-first-bullet"></a>
@@ -90,8 +90,8 @@ from keras.layers import GlobalAveragePooling2D, GlobalMaxPooling2D
 
 
 #unpack the dataset
-data_file = tarfile.open("/content/drive/My Drive/Colab Notebooks/SimbeRobotics-data/ocr.tar.gz")
-data_file.extractall("/content/drive/My Drive/Colab Notebooks/SimbeRobotics-data/")
+data_file = tarfile.open("/content/drive/My Drive/Colab Notebooks/ocr/ocr.tar.gz")
+data_file.extractall("/content/drive/My Drive/Colab Notebooks/ocr/")
 data_file.close()
 
 
@@ -102,7 +102,7 @@ data_file.close()
 @jit
 def get_img_list(data_path):
     return os.listdir(data_path)
-data_path = "/content/drive/My Drive/Colab Notebooks/SimbeRobotics-data/ocr_dataset/"
+data_path = "/content/drive/My Drive/Colab Notebooks/ocr/ocr_dataset/"
 img_files = get_img_list(data_path)
 print(len(img_files))
 img_files[:5]
@@ -219,11 +219,11 @@ all_images, all_labels = load_image_data(data_path, df)
 # In[ ]:
 
 
-with open('/content/drive/My Drive/Colab Notebooks/SimbeRobotics-data/all_images.data', 'wb') as filehandle:
+with open('/content/drive/My Drive/Colab Notebooks/ocr/all_images.data', 'wb') as filehandle:
     # store the data as binary data stream
     pickle.dump(all_images, filehandle)
 
-with open('/content/drive/My Drive/Colab Notebooks/SimbeRobotics-data/all_labels.data', 'wb') as filehandle:
+with open('/content/drive/My Drive/Colab Notebooks/ocr/all_labels.data', 'wb') as filehandle:
     # store the data as binary data stream
     pickle.dump(all_labels, filehandle)
 
@@ -235,11 +235,11 @@ with open('/content/drive/My Drive/Colab Notebooks/SimbeRobotics-data/all_labels
 
 
 #Load preprocessed data
-with open('/content/drive/My Drive/Colab Notebooks/SimbeRobotics-data/all_images.data', 'rb') as filehandle:
+with open('/content/drive/My Drive/Colab Notebooks/ocr/all_images.data', 'rb') as filehandle:
     # read the data as binary data stream
     all_images = pickle.load(filehandle)
 
-with open('/content/drive/My Drive/Colab Notebooks/SimbeRobotics-data/all_labels.data', 'rb') as filehandle:
+with open('/content/drive/My Drive/Colab Notebooks/ocr/all_labels.data', 'rb') as filehandle:
     # read the data as binary data stream
     all_labels = pickle.load(filehandle)
 
@@ -355,7 +355,7 @@ def cnn_model():
 
 #Trainig a basic model
 cnn_model = cnn_model()
-cnn_checkpointer = ModelCheckpoint(filepath='/content/drive/My Drive/Colab Notebooks/SimbeRobotics-data/models/weights_best_cnn.hdf5', verbose=2, save_best_only=True)
+cnn_checkpointer = ModelCheckpoint(filepath='/content/drive/My Drive/Colab Notebooks/ocr/models/weights_best_cnn.hdf5', verbose=2, save_best_only=True)
 es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=200)
 cnn_history = cnn_model.fit(X_train, y_train_list, 
                             validation_data=(X_val, y_valid_list), 
@@ -368,7 +368,7 @@ cnn_history = cnn_model.fit(X_train, y_train_list,
 
 #Evaluate
 cnn_model = cnn_model()
-cnn_model.load_weights('/content/drive/My Drive/Colab Notebooks/SimbeRobotics-data/models/weights_best_cnn.hdf5')
+cnn_model.load_weights('/content/drive/My Drive/Colab Notebooks/ocr/models/weights_best_cnn.hdf5')
 cnn_scores = cnn_model.evaluate(X_test, y_test_list, verbose=0)
 
 print("CNN Model 1. \n")
@@ -474,8 +474,8 @@ class Recognizer():
 @jit
 def main():
     #initialization
-    model_path = '/content/drive/My Drive/Colab Notebooks/SimbeRobotics-data/models/weights_best_cnn.hdf5'    
-    data_path = "/content/drive/My Drive/Colab Notebooks/SimbeRobotics-data/ocr_dataset/"
+    model_path = '/content/drive/My Drive/Colab Notebooks/ocr/models/weights_best_cnn.hdf5'    
+    data_path = "/content/drive/My Drive/Colab Notebooks/ocr/ocr_dataset/"
     img_files = get_img_list(data_path)
     n_cols, n_rows = 5, 2
     test_img_index = np.random.choice(range(len(img_files)), size = n_cols*n_rows)
